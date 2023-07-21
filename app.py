@@ -122,7 +122,7 @@ async def issue_comment_created(event, gh, *args, **kwargs):
     )
     comments_url = event.data["comment"]["url"]
 
-    if username == "Mariatta":
+    if username == "MaazounEng":
         response = await gh.post(
             f"{comments_url}/reactions",
             data={"content": "heart"},
