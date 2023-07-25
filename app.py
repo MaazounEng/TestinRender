@@ -75,10 +75,10 @@ async def repo_installation_added(event, gh, *args, **kwargs):
             oauth_token=installation_access_token["token"],
         )
 
-if __name__ == "__main__":  # pragma: no cover
     app = web.Application()
 
     app.router.add_routes(routes)
+if __name__ == "__main__":  # pragma: no cover
     port = os.environ.get("PORT")
     if port is not None:
         port = int(port)
