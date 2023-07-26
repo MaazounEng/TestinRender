@@ -21,20 +21,23 @@ routes = web.RouteTableDef()
 @routes.get("/", name="home")
 async def handle_get(request):
     return web.Response(text="Hello PyLadies Tunis")
-async def close_issues(gh, repo_owner, repo_name):
+    
+async def close_issues(gh, repos):
     """
-    Closes all open issues in a repository on GitHub.
+    Closes all open issues in a list of repositories on GitHub.
 
     Args:
         gh: A `gh_aiohttp.GitHubAPI` object.
-        repo_owner: The owner of the repository.
-        repo_name: The name of the repository.
+        repos: A list of dictionaries representing repositories.
     """
-    issues = await gh.get(f"/repos/{repo_owner}/{repo_name}/issues",
-                          params={"state": "open"})
-    for issue in issues:
-        issue_number = issue["number"]
-        await close_issue(gh, repo_owner, repo_name, issue_number)
+    for repo in repos:
+        repo_owner = repo["owner"]["login"]
+        repo_name = repo["name"]
+        issues = await gh.get(f"/repos/{repo_owner}/{repo_name}/issues",
+                              params={"state": "open"})
+        for issue in issues:
+            issue_number = issue["number"]
+            await close_issue(gh, repo_owner, repo_name, issue_number)
 
 
 async def close_issue(gh, repo_owner, repo_name, issue_number):
