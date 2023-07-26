@@ -22,6 +22,19 @@ routes = web.RouteTableDef()
 async def handle_get(request):
     return web.Response(text="Hello PyLadies Tunis")
 
+async def close_issue(gh, repo_owner, repo_name, issue_number):
+    """
+    Closes an open issue on GitHub.
+
+    Args:
+        gh: A `gh_aiohttp.GitHubAPI` object.
+        repo_owner: The owner of the repository.
+        repo_name: The name of the repository.
+        issue_number: The number of the issue to close.
+    """
+    await gh.patch(f"/repos/{repo_owner}/{repo_name}/issues/{issue_number}",
+                   data={"state": "closed"})
+
 
 @routes.post("/webhook")
 async def webhook(request):
@@ -36,6 +49,16 @@ async def webhook(request):
 
             await asyncio.sleep(1)
             await router.dispatch(event, gh)
+
+            if event.event == "issues":
+                action = event.data["action"]
+                if action == "closed":
+                    return web.Response(status=200)
+                elif action == "opened":
+                    repo_owner = event.data["repository"]["owner"]["login"]
+                    repo_name = event.data["repository"]["name"]
+                    issue_number = event.data["issue"]["number"]
+                    await close_issue(gh, repo_owner, repo_name, issue_number)
         try:
             print("GH requests remaining:", gh.rate_limit.remaining)
         except AttributeError:
@@ -45,8 +68,6 @@ async def webhook(request):
     except Exception as exc:
         traceback.print_exc(file=sys.stderr)
         return web.Response(status=500)
-
-
 
 
 
