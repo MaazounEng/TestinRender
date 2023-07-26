@@ -46,31 +46,7 @@ async def webhook(request):
         return web.Response(status=500)
 
 
-@router.register("installation", action="created")
-async def repo_installation_added(event, gh, *args, **kwargs):
-    installation_id = event.data["installation"]["id"]
 
-    installation_access_token = await apps.get_installation_access_token(
-        gh,
-        installation_id=installation_id,
-        app_id=os.environ.get("GH_APP_ID"),
-        private_key=os.environ.get("GH_PRIVATE_KEY")
-    )
-    maintainer = event.data["sender"]["login"]
-    message = f"Thanks for installing me, @{maintainer}! (I'm a bot)."
-
-    for repository in event.data["repositories_added"]:
-        url = f"/repos/{repository['full_name']}/issues"
-        response = await gh.post(
-            url,
-            data={
-                "title": "Mariatta's bot was installed",
-                "body": message
-            },
-            oauth_token=installation_access_token["token"],
-        )
-    print(response)
-    
 
 
 if __name__ == "__main__":  # pragma: no cover
