@@ -40,6 +40,7 @@ async def webhook(request):
             print("GH requests remaining:", gh.rate_limit.remaining)
         except AttributeError:
             pass
+        print("Webhook received event:", event.event)
         return web.Response(status=200)
     except Exception as exc:
         traceback.print_exc(file=sys.stderr)
