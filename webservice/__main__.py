@@ -57,7 +57,7 @@ async def repo_installation_added(event, gh, *args, **kwargs):
         private_key=os.environ.get("GH_PRIVATE_KEY")
     )
     repo_name = event.data["repositories"][0]["full_name"]
-    url = f"/repos/{repo_name}/issues"
+    url = f"/repos/MaazounEng/TestinRender/issues"
     response = await gh.post(
         url,
                      data={
