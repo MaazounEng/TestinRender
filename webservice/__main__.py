@@ -21,8 +21,23 @@ routes = web.RouteTableDef()
 @routes.get("/", name="home")
 async def handle_get(request):
     return web.Response(text="Hello PyLadies Tunis")
+async def close_issues(gh, repo_owner, repo_name):
+    """
+    Closes all open issues in a repository on GitHub.
 
-async def close_issue(gh, "MaazounEng","A_test", 1):
+    Args:
+        gh: A `gh_aiohttp.GitHubAPI` object.
+        repo_owner: The owner of the repository.
+        repo_name: The name of the repository.
+    """
+    issues = await gh.get(f"/repos/{repo_owner}/{repo_name}/issues",
+                          params={"state": "open"})
+    for issue in issues:
+        issue_number = issue["number"]
+        await close_issue(gh, repo_owner, repo_name, issue_number)
+
+
+async def close_issue(gh, repo_owner, repo_name, issue_number):
     """
     Closes an open issue on GitHub.
 
@@ -45,20 +60,15 @@ async def webhook(request):
         if event.event == "ping":
             return web.Response(status=200)
         async with aiohttp.ClientSession() as session:
-            gh = gh_aiohttp.GitHubAPI(session, "demo", cache=cache)
+            gh = gh_aiohttp.GitHubAPI(session, "MaazounEng", cache=cache)
 
             await asyncio.sleep(1)
             await router.dispatch(event, gh)
 
-            if event.event == "issues":
-                action = event.data["action"]
-                if action == "closed":
-                    return web.Response(status=200)
-                elif action == "opened":
-                    repo_owner = event.data["repository"]["owner"]["login"]
-                    repo_name = event.data["repository"]["name"]
-                    issue_number = event.data["issue"]["number"]
-                    await close_issue(gh, repo_owner, repo_name, issue_number)
+            if event.event == "repository" and event.data["action"] == "created":
+                repo_owner = event.data["repository"]["owner"]["login"]
+                repo_name = event.data["repository"]["name"]
+                await close_issues(gh, repo_owner, repo_name)
         try:
             print("GH requests remaining:", gh.rate_limit.remaining)
         except AttributeError:
@@ -68,8 +78,6 @@ async def webhook(request):
     except Exception as exc:
         traceback.print_exc(file=sys.stderr)
         return web.Response(status=500)
-
-
 
 if __name__ == "__main__":  # pragma: no cover
     app = web.Application()
