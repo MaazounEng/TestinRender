@@ -56,16 +56,19 @@ async def repo_installation_added(event, gh, *args, **kwargs):
         app_id=os.environ.get("GH_APP_ID"),
         private_key=os.environ.get("GH_PRIVATE_KEY")
     )
-    repo_name = event.data["repositories"][0]["full_name"]
-    url = f"/repos/MaazounEng/TestinRender/issues"
-    response = await gh.post(
-        url,
-                     data={
-        'title': 'Thanks for installing my bot',
-        'body': 'Thanks!',
+    maintainer = event.data["sender"]["login"]
+    message = f"Thanks for installing me, @{maintainer}! (I'm a bot)."
+
+    for repository in event.data["repositories_added"]:
+        url = f"/repos/{repository['full_name']}/issues"
+        response = await gh.post(
+            url,
+            data={
+                "title": "Mariatta's bot was installed",
+                "body": message
             },
-        oauth_token=installation_access_token["token"]
-                             )
+            oauth_token=installation_access_token["token"],
+        )
     print(response)
     
 
