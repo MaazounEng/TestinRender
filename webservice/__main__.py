@@ -21,37 +21,6 @@ routes = web.RouteTableDef()
 @routes.get("/", name="home")
 async def handle_get(request):
     return web.Response(text="Hello PyLadies Tunis")
-    
-async def close_issues(gh, repos):
-    """
-    Closes all open issues in a list of repositories on GitHub.
-
-    Args:
-        gh: A `gh_aiohttp.GitHubAPI` object.
-        repos: A list of dictionaries representing repositories.
-    """
-    for repo in repos:
-        repo_owner = repo["owner"]["login"]
-        repo_name = repo["name"]
-        issues = await gh.get(f"/repos/{repo_owner}/{repo_name}/issues",
-                              params={"state": "open"})
-        for issue in issues:
-            issue_number = issue["number"]
-            await close_issue(gh, repo_owner, repo_name, issue_number)
-
-
-async def close_issue(gh, repo_owner, repo_name, issue_number):
-    """
-    Closes an open issue on GitHub.
-
-    Args:
-        gh: A `gh_aiohttp.GitHubAPI` object.
-        repo_owner: The owner of the repository.
-        repo_name: The name of the repository.
-        issue_number: The number of the issue to close.
-    """
-    await gh.patch(f"/repos/{repo_owner}/{repo_name}/issues/{issue_number}",
-                   data={"state": "closed"})
 
 
 @routes.post("/webhook")
@@ -67,26 +36,45 @@ async def webhook(request):
 
             await asyncio.sleep(1)
             await router.dispatch(event, gh)
-
-            if event.event == "repository" and event.data["action"] == "created":
-                repo_owner = event.data["repository"]["owner"]["login"]
-                repo_name = event.data["repository"]["name"]
-                await close_issues(gh, repo_owner, repo_name)
         try:
             print("GH requests remaining:", gh.rate_limit.remaining)
         except AttributeError:
             pass
-        print("Webhook received event:", event.event)
         return web.Response(status=200)
     except Exception as exc:
         traceback.print_exc(file=sys.stderr)
         return web.Response(status=500)
 
+
+@router.register("installation", action="created")
+async def repo_installation_added(event, gh, *args, **kwargs):
+    installation_id = event.data["installation"]["id"]
+
+    installation_access_token = await apps.get_installation_access_token(
+        gh,
+        installation_id=installation_id,
+        app_id=os.environ.get("GH_APP_ID"),
+        private_key=os.environ.get("GH_PRIVATE_KEY")
+    )
+    repo_name = event.data["repositories"][0]["full_name"]
+    url = f"/repos/{repo_name}/issues"
+    response = await gh.post(
+        url,
+                     data={
+        'title': 'Thanks for installing my bot',
+        'body': 'Thanks!',
+            },
+        oauth_token=installation_access_token["token"]
+                             )
+    print(response)
+
+
+
 if __name__ == "__main__":  # pragma: no cover
     app = web.Application()
 
     app.router.add_routes(routes)
-    port = int(os.environ.get("PORT", 8081))
+    port = os.environ.get("PORT")
     if port is not None:
         port = int(port)
     web.run_app(app, port=port)
