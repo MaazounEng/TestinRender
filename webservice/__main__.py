@@ -69,8 +69,9 @@ async def repo_installation_added(event, gh, *args, **kwargs):
     print(response)
     
 
+
 if __name__ == "__main__":  # pragma: no cover
-        app = web.Application()
+    app = web.Application()
 
     app.router.add_routes(routes)
     port = int(os.environ.get("PORT", 8081))
