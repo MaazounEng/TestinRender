@@ -22,7 +22,7 @@ routes = web.RouteTableDef()
 async def handle_get(request):
     return web.Response(text="Hello PyLadies Tunis")
 
-async def close_issue(gh, repo_owner, repo_name, issue_number):
+async def close_issue(gh, "MaazounEng","A_test", 1):
     """
     Closes an open issue on GitHub.
 
