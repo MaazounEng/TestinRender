@@ -18,10 +18,6 @@ cache = cachetools.LRUCache(maxsize=500)
 routes = web.RouteTableDef()
 
 
-@routes.get("/", name="home")
-async def handle_get(request):
-    return web.Response(text="Hello PyLadies Tunis")
-
 
 @routes.post("/webhook")
 async def webhook(request):
